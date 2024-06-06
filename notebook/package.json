@@ -1,0 +1,14 @@
+{
+  "name": "7b7f3aea5b9f1980",
+  "main": "7b7f3aea5b9f1980@684.js",
+  "version": "684.0.0",
+  "homepage": "https://observablehq.com/d/7b7f3aea5b9f1980",
+  "author": {
+    "name": "Jeremy Teitelbaum",
+    "url": "https://observablehq.com/@jeremy9959"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "@observablehq/runtime": "4 - 5"
+  }
+}
