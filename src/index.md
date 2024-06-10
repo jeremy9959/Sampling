@@ -25,6 +25,10 @@ var tdata = d3.range(-4, 4, 0.01).map((x) => {
 Illustrating the t-distribution arising from samples from a normal distribution.
 
 ```js
+const reset = view(Inputs.button("Restart"));
+```
+
+```js
 const nsamples = view(
   Inputs.range([1, 30], { step: 1, value: 5, label: "Sample Size" })
 );
@@ -32,7 +36,7 @@ const nsamples = view(
 
 ```js
 const limit = view(
-  Inputs.range([100, 1000], {
+  Inputs.range([100, 10000], {
     step: 20,
     value: 500,
     label: "Max number of samples",
@@ -77,6 +81,8 @@ display(
 
 ## Histogram of t-statistics with ${nsamples-1} degrees of freedom
 
+${samples.ct} samples out of ${limit}
+
 ```js
 display(
   Plot.plot({
@@ -88,9 +94,13 @@ display(
         Plot.binX(
           {
             y: (a, bin) => {
-              return a.length / bin.data.length / (bin.x2 - bin.x1);
+              return (
+                ((samples.ct / limit) * a.length) /
+                bin.data.length /
+                (bin.x2 - bin.x1)
+              );
             },
-            thresholds: limit > 1000 ? 50 : limit / 20,
+            thresholds: d3.range(-4, 4.2, 0.2),
           },
           { fill: "#AAAAAA" }
         )
@@ -103,12 +113,13 @@ display(
 ```
 
 ```js
+reset;
 const samples = (async function* () {
   var allm = [];
-  for (let j = 0; true; ++j) {
+  for (let j = 0; j <= limit; ++j) {
     const s = samplefn(nsamples);
     allm.push(s);
-    yield { m: s, accum: allm };
+    yield { m: s, accum: allm, ct: j };
     await new Promise((resolve, reject) => setTimeout(resolve, inter));
   }
 })();
