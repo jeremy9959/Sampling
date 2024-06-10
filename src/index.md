@@ -21,7 +21,7 @@ var c = d3.range(-4, 4, 0.01).map((x) => {
   return { x: x, y: jstat.normal.pdf(x, 0, 1) };
 });
 var tdata = d3.range(-4, 4, 0.01).map((x) => {
-  return { x: x, y: jstat.studentt.pdf(x, nsamples.value - 1) };
+  return { x: x, y: jstat.studentt.pdf(x, nsamples - 1) };
 });
 ```
 
@@ -30,35 +30,41 @@ var tdata = d3.range(-4, 4, 0.01).map((x) => {
 Illustrating the t-distribution arising from samples from a normal distribution.
 
 ```js
-const reset = view(Inputs.button("Restart"));
+const resetInput = Inputs.button("Restart");
+const reset = Generators.input(resetInput)
 ```
 
 ```js
-const nsamples = Inputs.range([1, 30], {
+const nsamplesInput = Inputs.range([1, 30], {
   step: 1,
   value: 5,
   label: "Sample Size",
 });
+const nsamples = Generators.input(nsamplesInput)
 ```
 
 ```js
-const limit = Inputs.range([100, 10000], {
+const limitInput = Inputs.range([100, 10000], {
   step: 20,
   value: 500,
   label: "Max number of samples",
 });
+const limit = Generators.input(limitInput)
 ```
 
 ```js
-const inter = Inputs.range([1, 1000], {
+const interInput = Inputs.range([1, 1000], {
   step: 100,
   value: 100,
   label: "Time interval between samples",
 });
+const inter = Generators.input(interInput)
 ```
 
-<div class = "grid grid-cols-2" style:="grid-auto-rows: auto;">
-<div class = "card grid-rowspan-2">${inter}<br> ${limit}<br> ${nsamples}<br></div>
+<div class = "grid grid-cols-2">
+<div class = "card grid-colspan-2">${resetInput} ${interInput} ${limitInput} ${nsamplesInput}</div>
+</div>
+<div class="grid grid-cols-2">
 <div class="card">${normal_plot}</div>
 <div class="card">${thist} </div>
 </div>
@@ -91,7 +97,7 @@ var normal_plot = Plot.plot({
 var thist = Plot.plot({
   title: html`<h2>
     T-distribution for ${nsamples - 1} degrees of freedom and ${samples.ct}
-    samples out of ${limit.value}
+    samples out of ${limit}
   </h2>`,
   y: { grid: true, domain: [0, 0.4] },
   x: { domain: [-4, 4] },
@@ -103,7 +109,7 @@ var thist = Plot.plot({
         {
           y: (a, bin) => {
             return (
-              ((samples.ct / limit.value) * a.length) /
+              ((samples.ct / limit) * a.length) /
               bin.data.length /
               (bin.x2 - bin.x1)
             );
@@ -123,11 +129,11 @@ var thist = Plot.plot({
 reset;
 const samples = (async function* () {
   var allm = [];
-  for (let j = 0; j <= limit.value; ++j) {
-    const s = samplefn(nsamples.value);
+  for (let j = 0; j <= limit; ++j) {
+    const s = samplefn(nsamples);
     allm.push(s);
     yield { m: s, accum: allm, ct: j };
-    await new Promise((resolve, reject) => setTimeout(resolve, inter.value));
+    await new Promise((resolve, reject) => setTimeout(resolve, inter));
   }
 })();
 ```
@@ -135,7 +141,7 @@ const samples = (async function* () {
 ```js
 var tstats = samples.accum.map(
   (x) =>
-    (Math.sqrt(nsamples.value) * d3.mean(x, (x) => x.t)) /
+    (Math.sqrt(nsamples) * d3.mean(x, (x) => x.t)) /
     d3.deviation(x, (x) => x.t)
 );
 ```
