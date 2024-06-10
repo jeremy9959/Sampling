@@ -1,3 +1,8 @@
+---
+theme: dashboard
+toc: false
+---
+
 ```js
 import jstat from "npm:jstat";
 ```
@@ -9,71 +14,128 @@ var samplefn = (nsamples) =>
   });
 ```
 
-## The standard normal distribution
+```js
+var sd = 1;
+var mean = 0;
+var c = d3.range(-4, 4, 0.01).map((x) => {
+  return { x: x, y: jstat.normal.pdf(x, 0, 1) };
+});
+var tdata = d3.range(-4, 4, 0.01).map((x) => {
+  return { x: x, y: jstat.studentt.pdf(x, nsamples.value - 1) };
+});
+```
+
+# Sampling from the standard normal distribution
+
+Illustrating the t-distribution arising from samples from a normal distribution.
 
 ```js
-function NormalPdfPlot(mean, std) {
-  var ndata = d3
-    .range(-10, 10, 0.01)
-    .map((x) => ({ x: x, y: jstat.normal.pdf(x, mean, std) }));
-  return Plot.plot({
-    x: { domain: [-10, 10], grid: true },
-    y: { grid: true, domain: [0, 0.5] },
-    marks: [
-      Plot.ruleY([0]),
-      Plot.line(ndata, { x: "x", y: "y", stroke: "green" }),
-    ],
-  });
-}
-``` 
-
-
-```js
-const simple = (function* () {
-  yield 0 ; 
-  yield 1 ; 
-  var a = 0 ; 
-  var b = 1 ; 
-  do {
-    yield a+b ; 
-    var c = a+b ; 
-    a = b ; 
-    b = c ; 
-  } while(true) ; 
-})
+const reset = view(Inputs.button("Restart"));
 ```
 
 ```js
+const nsamples = Inputs.range([1, 30], {
+  step: 1,
+  value: 5,
+  label: "Sample Size",
+});
 ```
 
-
-
-
-
-
-
+```js
+const limit = Inputs.range([100, 10000], {
+  step: 20,
+  value: 500,
+  label: "Max number of samples",
+});
+```
 
 ```js
-const j = (async function* () {
-  for (let j = 0; true; ++j) {
-    yield samplefn(5);
-    let x = new Promise((resolve, reject) => setTimeout(resolve, 1000));
-    await Promise.all([x]);
+const inter = Inputs.range([1, 1000], {
+  step: 100,
+  value: 100,
+  label: "Time interval between samples",
+});
+```
+
+<div class = "grid grid-cols-2" style:="grid-auto-rows: auto;">
+<div class = "card grid-rowspan-2">${inter}<br> ${limit}<br> ${nsamples}<br></div>
+<div class="card">${normal_plot}</div>
+<div class="card">${thist} </div>
+</div>
+
+```js
+var normal_plot = Plot.plot({
+  title: html`<h2>
+    Standard Normal Distribution with Samples and Sample Mean
+  </h2>`,
+  y: { grid: true },
+  x: { domain: [-4, 4] },
+  marks: [
+    Plot.dot(samples.m, {
+      x: "t",
+      y: 0,
+      fill: "darkorange",
+      fillOpacity: 0.6,
+      r: 4,
+    }),
+    Plot.ruleX([d3.mean(samples.m, (x) => x.t)], {
+      stroke: "lightgreen",
+      strokeWidth: 3,
+    }),
+    Plot.line(c, { x: "x", y: "y", stroke: "steelblue" }),
+  ],
+});
+```
+
+```js
+var thist = Plot.plot({
+  title: html`<h2>
+    T-distribution for ${nsamples - 1} degrees of freedom and ${samples.ct}
+    samples out of ${limit.value}
+  </h2>`,
+  y: { grid: true, domain: [0, 0.4] },
+  x: { domain: [-4, 4] },
+
+  marks: [
+    Plot.rectY(
+      tstats,
+      Plot.binX(
+        {
+          y: (a, bin) => {
+            return (
+              ((samples.ct / limit.value) * a.length) /
+              bin.data.length /
+              (bin.x2 - bin.x1)
+            );
+          },
+          thresholds: d3.range(-4, 4.2, 0.2),
+        },
+        { fill: "#AAAAAA" }
+      )
+    ),
+    Plot.ruleY([0]),
+    Plot.line(tdata, { x: "x", y: "y" }),
+  ],
+});
+```
+
+```js
+reset;
+const samples = (async function* () {
+  var allm = [];
+  for (let j = 0; j <= limit.value; ++j) {
+    const s = samplefn(nsamples.value);
+    allm.push(s);
+    yield { m: s, accum: allm, ct: j };
+    await new Promise((resolve, reject) => setTimeout(resolve, inter.value));
   }
 })();
 ```
 
 ```js
-display(d3.mean(j.map((x) => x.t)));
-```
-
-```js
-const mean = view(
-  Inputs.range([-2, 2], { step: 0.25, label: "mean", value: 0 })
+var tstats = samples.accum.map(
+  (x) =>
+    (Math.sqrt(nsamples.value) * d3.mean(x, (x) => x.t)) /
+    d3.deviation(x, (x) => x.t)
 );
-const sd = view(Inputs.range([1, 4], { step: 0.25, label: "sd", value: 1 }));
 ```
-
-<div class="grid grid-cols-1">
-    <div class="card"> ${resize((width) => NormalPdfPlot(mean,sd))}</div>
-</div>
