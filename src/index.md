@@ -25,7 +25,33 @@ function NormalPdfPlot(mean, std) {
     ],
   });
 }
+``` 
+
+
+```js
+const simple = (function* () {
+  yield 0 ; 
+  yield 1 ; 
+  var a = 0 ; 
+  var b = 1 ; 
+  do {
+    yield a+b ; 
+    var c = a+b ; 
+    a = b ; 
+    b = c ; 
+  } while(true) ; 
+})
 ```
+
+```js
+```
+
+
+
+
+
+
+
 
 ```js
 const j = (async function* () {
